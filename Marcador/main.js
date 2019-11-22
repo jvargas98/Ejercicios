@@ -11,12 +11,22 @@ function readFile() {
       let text = event.target.result;
 
       // Hace un split para sacar las lineas (rondas)
-      lines = text.split("\n");
-      // Enviamos las rondas y obtenemos el resultado del jugador ganador
-      let result = determineWinner(lines);
+      let lines = text.split("\n");
 
-      // Creamos el documento de texto con los datos
-      createDocument(result.player, result.diff);
+      console.log(lines);
+
+      let validData = validateData(lines);
+
+      if (validData === true) {
+        // Enviamos las rondas y obtenemos el resultado del jugador ganador
+        let result = determineWinner(lines);
+
+        // Creamos el documento de texto con los datos
+        createDocument(result.player, result.diff);
+      } else {
+        alert(validData);
+        location.reload();
+      }
     };
   } else {
     alert("Formato incorrecto");
@@ -31,18 +41,18 @@ function determineWinner(results) {
   let higher = 0;
   let winner = 0;
   let sum = 0;
+  let acumulado = [0, 0];
 
   for (let index = 1; index < results.length; index++) {
     // Creamos un array dentro de la posicion del array  con un split para separa los numeros
-    results[index] = results[index].split(" ");
 
-    // Pasamos a enteros los numeros
-    results[index] = results[index].map(number => {
-      return parseInt(number);
-    });
+    acumulado[0] += results[index][0];
+    acumulado[1] += results[index][1];
+
+    console.log(acumulado);
 
     // Validacion para determinar el puntje mas alto de los dos jugadores por ronda
-    if (results[index][0] > results[index][1])
+    if (acumulado[0] > acumulado[1])
       // Jugador 1 ganador
       winner = 1;
     // jugador 2 ganador
@@ -51,7 +61,7 @@ function determineWinner(results) {
     // Validacion del ganador para determinar el orden de la resta para sacar la diferencia
     if (winner == 1) {
       // Sacamos la diferencia
-      sum = results[index][0] - results[index][1];
+      sum = acumulado[0] - acumulado[1];
 
       // Validacion para saber si es la maxima diferencia
       if (sum > higher) {
@@ -65,7 +75,7 @@ function determineWinner(results) {
       }
     } else {
       // Sacamo la diferencia
-      sum = results[index][1] - results[index][0];
+      sum = acumulado[1] - acumulado[0];
 
       // Validacion para saber si es la maxima diferencia
       if (sum > higher) {
@@ -80,6 +90,44 @@ function determineWinner(results) {
     }
   }
   return player;
+}
+
+function validateData(data) {
+  let expRg = /^[0-9]*$/;
+  let characteresInRounds = 0;
+
+  if (!expRg.test(data[0].trim(" "))) return "caracter en total de rondas";
+
+  data[0] = parseInt(data[0]);
+
+  if (data[0] >= 10000) return "la cantidad de rondas es invalida";
+
+  if (data[0] != data.length - 1)
+    return "la cantidad de entradas no coinicide con el numero de rondas";
+
+  for (let index = 1; index < data.length; index++) {
+    // Creamos un array dentro de la posicion del array  con un split para separa los numeros
+    data[index] = data[index].split(" ");
+
+    // Pasamos a enteros los numeros
+    data[index] = data[index].map(number => {
+      number = number.trim(" ");
+      let result = expRg.test(number);
+      if (!result) {
+        characteresInRounds++;
+      }
+      return parseInt(number);
+    });
+  }
+
+  console.log(characteresInRounds);
+
+  if (data[0] > data.length - 1)
+    return "el numero de entradas es mayor que el numero de rondas";
+  if (data[0] < data.length - 1)
+    return "el numero de entradas es menor que el numero de rondas";
+  if (characteresInRounds > 0) return "caracter en valor de ronda";
+  return true;
 }
 
 // Funcion para crear el archivo de texto

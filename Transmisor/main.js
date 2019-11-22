@@ -9,8 +9,17 @@ function readFile() {
   if (file.type.match(textFile)) {
     reader.onload = function(event) {
       let code = event.target.result;
-      let results = decrypt(code);
-      createDocument(results[0], results[1]);
+      let validMessage = validateCode(code);
+
+      if (validMessage === true) {
+        let results = decrypt(code);
+        if (results[0] == results[1]) alert("Se encontraron dos instrucciones");
+        else createDocument(results[0], results[1]);
+      } else {
+        alert(validMessage);
+
+        location.reload();
+      }
     };
   } else {
     alert("Formato incorrecto");
@@ -23,28 +32,12 @@ function readFile() {
 function decrypt(code) {
   console.log(code);
 
-  // Hace un split para sacar las lineas
-  code = code.split("\n");
-
-  // Destructuring para sacar cada posicion del code y asignarla a cada variable
-  [firstLine, firstInstruction, secondInstruction, message] = code;
-
-  // Split para sacar cada numero seperado por espacio
-  firstLine = firstLine.split(" ");
-
-  // Pasa de string a int los numeros
-  firstLine = firstLine.map(number => {
-    return parseInt(number);
-  });
-
-  // Destructuring para asignar cada variable el valor de cada posicion
-  /* [m1, m2, n] = firstLine; */
+  [firstLine, firstInstruction, secondInstruction, message] = getValues(code);
 
   // Llamada a la funcion fixCode para obtener el mensaje sin duplicaciones de caracteres
   message = fixCode(message);
 
-  firstInstruction = firstInstruction.slice(0, -1);
-  secondInstruction = secondInstruction.slice(0, -1);
+  console.log(message);
 
   instruction1Found = searchInstruction(firstInstruction, message);
   instruction2Found = searchInstruction(secondInstruction, message);
@@ -93,6 +86,72 @@ function fixCode(instruction) {
 function searchInstruction(instruction, message) {
   if (message.includes(instruction)) return "SI";
   return "NO";
+}
+
+function getValues(code) {
+  code = code.split("\n");
+
+  // Destructuring para sacar cada posicion del code y asignarla a cada variable
+  [firstLine, firstInstruction, secondInstruction, message] = code;
+
+  // Split para sacar cada numero seperado por espacio
+  firstLine = firstLine.split(" ");
+
+  // Pasa de string a int los numeros
+  firstLine = firstLine.map(number => {
+    return parseInt(number);
+  });
+
+  firstInstruction = firstInstruction.slice(0, -1);
+  secondInstruction = secondInstruction.slice(0, -1);
+
+  return [firstLine, firstInstruction, secondInstruction, message];
+}
+
+function validateCode(code) {
+  let expRg = /^[A-z0-9]*$/;
+
+  [firstLine, firstInstruction, secondInstruction, message] = getValues(code);
+
+  // Destructuring para asignar cada variable el valor de cada posicion
+
+  [m1, m2, n] = firstLine;
+
+  if (!(Number.isInteger(m1) && Number.isInteger(m2) && Number.isInteger(n)))
+    return "tipo de dato invalido para el numero de caracteres";
+  if (!(firstInstruction.length == m1))
+    return "la longitud de caracteres para la primera instruccion no concuerda con la longitud de la instruccion 1";
+  if (!(secondInstruction.length == m2))
+    return "la longitud de caracteres para la segunda instruccion no concuerda con la longitud de la instruccion 2";
+  if (!(message.length == n))
+    return "la longitud de caracteres no concuerda con la longitud del mensaje";
+
+  if (lookForRepetitions(firstInstruction))
+    return "la primera instruccion contiene caracteres repetidos";
+  if (lookForRepetitions(secondInstruction))
+    return "la segunda instruccion contiene caracteres repetidos";
+
+  if (!(n >= 3 && n <= 5000))
+    return "longitud de caracteres invalida para el mensaje";
+  if (!(firstInstruction.length >= 2 && firstInstruction.length <= 50))
+    return "longitud de caracteres invalida para la primera instruccion";
+  if (!(secondInstruction.length >= 2 && secondInstruction.length <= 50))
+    return "longitud de caracteres invalida para la segunda instruccion";
+  if (!expRg.test(message)) return "el mensaje contiene caracteres invalidos";
+  return true;
+}
+
+function lookForRepetitions(instruction) {
+  let instructionArray = instruction.split("");
+  let countRepetitions = 0;
+
+  for (let index = 0; index < instructionArray.length; index++) {
+    if (instructionArray[index] == instructionArray[index + 1])
+      countRepetitions++;
+  }
+
+  if (countRepetitions > 0) return true;
+  return false;
 }
 
 // Funcion para crear el archivo de texto
